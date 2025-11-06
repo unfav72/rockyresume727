@@ -1,0 +1,4 @@
+Name: resume-builder
+   Environment: Node
+   Build Command: npm install
+   Start Command: npm start
