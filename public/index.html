@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Auth Pages */
+        .auth-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .auth-container h2 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .auth-switch a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* Main App */
+        .app-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .app-header h1 {
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            padding: 8px 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .editor-panel, .preview-panel {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-assist-btn {
+            padding: 5px 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .ai-assist-btn:hover {
+            background: #218838;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .add-btn {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .item-list {
+            margin-top: 15px;
+        }
+
+        .item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* Resume Preview */
+        #resumePreview {
+            background: white;
+            padding: 40px;
+            min-height: 600px;
+        }
+
+        .resume-header {
+            text-align: center;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .resume-header h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .resume-header p {
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .resume-section {
+            margin-bottom: 25px;
+        }
+
+        .resume-section h2 {
+            color: #667eea;
+            font-size: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+
+        .resume-item {
+            margin-bottom: 15px;
+        }
+
+        .resume-item h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .resume-item .meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .resume-item p {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .download-btn, .save-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .download-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .save-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .api-key-section {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .api-key-section input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="auth-container">
+        <h2>Login to Resume Builder</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="loginUsername" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+        </form>
+        <div class="auth-switch">
+            Don't have an account? <a href="#" onclick="showRegister()">Register</a>
+        </div>
+    </div>
+
+    <!-- Register Page -->
+    <div id="registerPage" class="auth-container hidden">
+        <h2>Create Account</h2>
+        <form id="registerForm">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="registerUsername" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="registerEmail" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="registerPassword" required>
+            </div>
+            <button type="submit" class="btn">Register</button>
+        </form>
+        <div class="auth-switch">
+            Already have an account? <a href="#" onclick="showLogin()">Login</a>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <div class="container">
+            <div class="app-header">
+                <h1>AI Resume Builder</h1>
+                <div class="user-info">
+                    <span>Welcome, <strong id="currentUser"></strong></span>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <!-- Editor Panel -->
+                <div class="editor-panel">
+                    <div class="api-key-section">
+                        <label><strong>OpenAI API Key (Optional for AI features):</strong></label>
+                        <input type="password" id="apiKey" placeholder="sk-...">
+                    </div>
+
+                    <!-- Personal Info -->
+                    <div class="section">
+                        <h3>Personal Information</h3>
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="fullName" placeholder="John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="email" placeholder="john@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="phone" placeholder="+1 234 567 8900">
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="location" placeholder="New York, NY">
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="section">
+                        <h3>
+                            Professional Summary
+                            <button class="ai-assist-btn" onclick="aiImprove('summary')">✨ AI Improve</button>
+                        </h3>
+                        <textarea id="summary" placeholder="Write a brief professional summary..."></textarea>
+                    </div>
+
+                    <!-- Experience -->
+                    <div class="section">
+                        <h3>Work Experience</h3>
+                        <div class="form-group">
+                            <label>Job Title</label>
+                            <input type="text" id="expTitle" placeholder="Software Engineer">
+                        </div>
+                        <div class="form-group">
+                            <label>Company</label>
+                            <input type="text" id="expCompany" placeholder="Tech Corp">
+                        </div>
+                        <div class="form-group">
+                            <label>Duration</label>
+                            <input type="text" id="expDuration" placeholder="Jan 2020 - Present">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="expDescription" placeholder="Describe your responsibilities..."></textarea>
+                        </div>
+                        <button class="add-btn" onclick="addExperience()">+ Add Experience</button>
+                        <div id="experienceList" class="item-list"></div>
+                    </div>
+
+                    <!-- Education -->
+                    <div class="section">
+                        <h3>Education</h3>
+                        <div class="form-group">
+                            <label>Degree</label>
+                            <input type="text" id="eduDegree" placeholder="Bachelor of Science">
+                        </div>
+                        <div class="form-group">
+                            <label>Institution</label>
+                            <input type="text" id="eduSchool" placeholder="University Name">
+                        </div>
+                        <div class="form-group">
+                            <label>Year</label>
+                            <input type="text" id="eduYear" placeholder="2016 - 2020">
+                        </div>
+                        <button class="add-btn" onclick="addEducation()">+ Add Education</button>
+                        <div id="educationList" class="item-list"></div>
+                    </div>
+
+                    <!-- Skills -->
+                    <div class="section">
+                        <h3>Skills</h3>
+                        <div class="form-group">
+                            <input type="text" id="skillInput" placeholder="e.g., JavaScript, Project Management">
+                        </div>
+                        <button class="add-btn" onclick="addSkill()">+ Add Skill</button>
+                        <div id="skillsList" class="item-list"></div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="save-btn" onclick="saveResume()">💾 Save Resume</button>
+                        <button class="download-btn" onclick="downloadPDF()">📄 Download PDF</button>
+                    </div>
+                </div>
+
+                <!-- Preview Panel -->
+                <div class="preview-panel">
+                    <h3 style="color: #667eea; margin-bottom: 20px;">Live Preview</h3>
+                    <div id="resumePreview">
+                        <div class="resume-header">
+                            <h1 id="previewName">Your Name</h1>
+                            <p id="previewEmail">email@example.com</p>
+                            <p id="previewPhone">Phone Number</p>
+                            <p id="previewLocation">Location</p>
+                        </div>
+
+                        <div class="resume-section">
+                            <h2>Professional Summary</h2>
+                            <p id="previewSummary">Your professional summary will appear here...</p>
+                        </div>
+
+                        <div class="resume-section">
+                            <h2>Work Experience</h2>
+                            <div id="previewExperience"></div>
+                        </div>
+
+                        <div class="resume-section">
+                            <h2>Education</h2>
+                            <div id="previewEducation"></div>
+                        </div>
+
+                        <div class="resume-section">
+                            <h2>Skills</h2>
+                            <p id="previewSkills">Your skills will appear here...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let currentUser = null;
+        let resumeData = {
+            experience: [],
+            education: [],
+            skills: []
+        };
+
+        // Auth Functions
+        function showLogin() {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('registerPage').classList.add('hidden');
+        }
+
+        function showRegister() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('registerPage').classList.remove('hidden');
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    currentUser = username;
+                    document.getElementById('currentUser').textContent = username;
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    loadUserResume();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Login failed. Please check your server connection.');
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Registration successful! Please login.');
+                    showLogin();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Registration failed. Please check your server connection.');
+            }
+        });
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('loginForm').reset();
+        }
+
+        // Live Preview Updates
+        document.getElementById('fullName').addEventListener('input', (e) => {
+            document.getElementById('previewName').textContent = e.target.value || 'Your Name';
+        });
+
+        document.getElementById('email').addEventListener('input', (e) => {
+            document.getElementById('previewEmail').textContent = e.target.value || 'email@example.com';
+        });
+
+        document.getElementById('phone').addEventListener('input', (e) => {
+            document.getElementById('previewPhone').textContent = e.target.value || 'Phone Number';
+        });
+
+        document.getElementById('location').addEventListener('input', (e) => {
+            document.getElementById('previewLocation').textContent = e.target.value || 'Location';
+        });
+
+        document.getElementById('summary').addEventListener('input', (e) => {
+            document.getElementById('previewSummary').textContent = e.target.value || 'Your professional summary will appear here...';
+        });
+
+        // Add Experience
+        function addExperience() {
+            const title = document.getElementById('expTitle').value;
+            const company = document.getElementById('expCompany').value;
+            const duration = document.getElementById('expDuration').value;
+            const description = document.getElementById('expDescription').value;
+
+            if (!title || !company) {
+                alert('Please fill in at least title and company');
+                return;
+            }
+
+            const exp = { title, company, duration, description };
+            resumeData.experience.push(exp);
+            
+            document.getElementById('expTitle').value = '';
+            document.getElementById('expCompany').value = '';
+            document.getElementById('expDuration').value = '';
+            document.getElementById('expDescription').value = '';
+
+            updateExperienceDisplay();
+        }
+
+        function updateExperienceDisplay() {
+            const list = document.getElementById('experienceList');
+            const preview = document.getElementById('previewExperience');
+            
+            list.innerHTML = '';
+            preview.innerHTML = '';
+
+            resumeData.experience.forEach((exp, index) => {
+                list.innerHTML += `
+                    <div class="item">
+                        <button class="remove-btn" onclick="removeExperience(${index})">Remove</button>
+                        <strong>${exp.title}</strong> at ${exp.company}<br>
+                        <small>${exp.duration}</small>
+                    </div>
+                `;
+
+                preview.innerHTML += `
+                    <div class="resume-item">
+                        <h3>${exp.title}</h3>
+                        <div class="meta">${exp.company} | ${exp.duration}</div>
+                        <p>${exp.description}</p>
+                    </div>
+                `;
+            });
+        }
+
+        function removeExperience(index) {
+            resumeData.experience.splice(index, 1);
+            updateExperienceDisplay();
+        }
+
+        // Add Education
+        function addEducation() {
+            const degree = document.getElementById('eduDegree').value;
+            const school = document.getElementById('eduSchool').value;
+            const year = document.getElementById('eduYear').value;
+
+            if (!degree || !school) {
+                alert('Please fill in degree and institution');
+                return;
+            }
+
+            const edu = { degree, school, year };
+            resumeData.education.push(edu);
+            
+            document.getElementById('eduDegree').value = '';
+            document.getElementById('eduSchool').value = '';
+            document.getElementById('eduYear').value = '';
+
+            updateEducationDisplay();
+        }
+
+        function updateEducationDisplay() {
+            const list = document.getElementById('educationList');
+            const preview = document.getElementById('previewEducation');
+            
+            list.innerHTML = '';
+            preview.innerHTML = '';
+
+            resumeData.education.forEach((edu, index) => {
+                list.innerHTML += `
+                    <div class="item">
+                        <button class="remove-btn" onclick="removeEducation(${index})">Remove</button>
+                        <strong>${edu.degree}</strong><br>
+                        ${edu.school} - ${edu.year}
+                    </div>
+                `;
+
+                preview.innerHTML += `
+                    <div class="resume-item">
+                        <h3>${edu.degree}</h3>
+                        <div class="meta">${edu.school} | ${edu.year}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function removeEducation(index) {
+            resumeData.education.splice(index, 1);
+            updateEducationDisplay();
+        }
+
+        // Add Skill
+        function addSkill() {
+            const skill = document.getElementById('skillInput').value.trim();
+            if (!skill) return;
+
+            resumeData.skills.push(skill);
+            document.getElementById('skillInput').value = '';
+            updateSkillsDisplay();
+        }
+
+        function updateSkillsDisplay() {
+            const list = document.getElementById('skillsList');
+            const preview = document.getElementById('previewSkills');
+            
+            list.innerHTML = '';
+            resumeData.skills.forEach((skill, index) => {
+                list.innerHTML += `
+                    <div class="item">
+                        <button class="remove-btn" onclick="removeSkill(${index})">Remove</button>
+                        ${skill}
+                    </div>
+                `;
+            });
+
+            preview.textContent = resumeData.skills.join(' • ') || 'Your skills will appear here...';
+        }
+
+        function removeSkill(index) {
+            resumeData.skills.splice(index, 1);
+            updateSkillsDisplay();
+        }
+
+        // AI Improvement
+        async function aiImprove(field) {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) {
+                alert('Please enter your OpenAI API key first');
+                return;
+            }
+
+            const text = document.getElementById('summary').value;
+            if (!text) {
+                alert('Please write something first');
+                return;
+            }
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>';
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo',
+                        messages: [{
+                            role: 'user',
+                            content: `Improve this professional summary for a resume, make it more compelling and professional: "${text}"`
+                        }],
+                        max_tokens: 200
+                    })
+                });
+
+                const data = await response.json();
+                if (data.choices && data.choices[0]) {
+                    document.getElementById('summary').value = data.choices[0].message.content.trim();
+                    document.getElementById('previewSummary').textContent = data.choices[0].message.content.trim();
+                } else {
+                    alert('Failed to improve text. Please check your API key.');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '✨ AI Improve';
+            }
+        }
+
+        // Save Resume
+        async function saveResume() {
+            if (!currentUser) return;
+
+            const resumeFullData = {
+                personal: {
+                    name: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    location: document.getElementById('location').value
+                },
+                summary: document.getElementById('summary').value,
+                experience: resumeData.experience,
+                education: resumeData.education,
+                skills: resumeData.skills
+            };
+
+            try {
+                const response = await fetch('/api/save-resume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: currentUser,
+                        resume: resumeFullData
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Resume saved successfully!');
+                } else {
+                    alert('Failed to save resume');
+                }
+            } catch (error) {
+                alert('Error saving resume: ' + error.message);
+            }
+        }
+
+        // Load Resume
+        async function loadUserResume() {
+            try {
+                const response = await fetch(`/api/get-resume?username=${currentUser}`);
+                const data = await response.json();
+                
+                if (data.success && data.resume) {
+                    const resume = data.resume;
+                    
+                    if (resume.personal) {
+                        document.getElementById('fullName').value = resume.personal.name || '';
+                        document.getElementById('email').value = resume.personal.email || '';
+                        document.getElementById('phone').value = resume.personal.phone || '';
+                        document.getElementById('location').value = resume.personal.location || '';
+                        
+                        document.getElementById('previewName').textContent = resume.personal.name || 'Your Name';
+                        document.getElementById('previewEmail').textContent = resume.personal.email || 'email@example.com';
+                        document.getElementById('previewPhone').textContent = resume.personal.phone || 'Phone Number';
+                        document.getElementById('previewLocation').textContent = resume.personal.location || 'Location';
+                    }
+                    
+                    document.getElementById('summary').value = resume.summary || '';
+                    document.getElementById('previewSummary').textContent = resume.summary || 'Your professional summary will appear here...';
+                    
+                    resumeData.experience = resume.experience || [];
+                    resumeData.education = resume.education || [];
+                    resumeData.skills = resume.skills || [];
+                    
+                    updateExperienceDisplay();
+                    updateEducationDisplay();
+                    updateSkillsDisplay();
+                }
+            } catch (error) {
+                console.error('Error loading resume:', error);
+            }
+        }
+
+        // Download PDF
+        async function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('resumePreview');
+            
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+            const imgX = (pdfWidth - imgWidth * ratio) / 2;
+            const imgY = 0;
+            
+            pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+            pdf.save('resume.pdf');
+        }
+    </script>
+</body>
+</html>
